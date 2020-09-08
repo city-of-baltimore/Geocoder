@@ -150,6 +150,8 @@ class Geocoder:
                                                        api=self.geocodio_api_list[self.geocodio_api_index]))
         if req.json().get("error"):
             self.geocodio_api_index += 1
+            if self.geocodio_api_index >= len(self.geocodio_api_list):
+                raise IndexError("Exhaused API key list")
             raise RuntimeError('Geocodio api error')
         return self._get_geocode_result(req)
 
@@ -162,5 +164,7 @@ class Geocoder:
                                                    api=self.geocodio_api_list[self.geocodio_api_index]))
         if req.json().get("error"):
             self.geocodio_api_index += 1
+            if self.geocodio_api_index >= len(self.geocodio_api_list):
+                raise IndexError("Exhaused API key list")
             raise RuntimeError('Geocodio api error')
         return self._get_geocode_result(req)
