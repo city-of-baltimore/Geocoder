@@ -20,6 +20,26 @@ def retry_if_runtime_error(exception):
     return isinstance(exception, RuntimeError)
 
 
+def error_check(func):
+    """
+    Decorator that handles error checking around the geocod.io web call
+    :param func:
+    :return:
+    """
+    def inner(self, *args, **kwargs):
+        if self.geocodio_api_index >= len(self.geocodio_api_list):
+            return None
+        req = func(self, *args, **kwargs)
+        if req.json().get("error") and req.json().get("error").startswith('Please add a payment method.'):
+            self.geocodio_api_index += 1
+            raise RuntimeError('Geocodio api error')
+        elif req.json().get("error"):
+            logging.error(req.json().get("error"))
+            return None
+        return self._get_geocode_result(req)
+    return inner
+
+
 class Geocoder:
     """Handles lookups to geocodio, while also supporting multiple API keys and result caching"""
     def __init__(self, geocodio_api_key, pickle_filename='geo.pickle'):
@@ -27,8 +47,11 @@ class Geocoder:
             self.geocodio_api_list = [geocodio_api_key]
         elif isinstance(geocodio_api_key, list):
             self.geocodio_api_list = geocodio_api_key
+        elif len(self.geocodio_api_list) == 1 and self.geocodio_api_list[0] == 'xxx':
+            raise ValueError("The GAPI key must be set in creds.py")
         else:
             raise TypeError("geocodio_api_key is of wrong type")
+
         self.geocodio_api_index = 0
         self.geocode_url = "https://api.geocod.io/v1.6/geocode?q={addr}&fields=census&api_key={api}"
         self.rev_geocode_url = "https://api.geocod.io/v1.6/reverse?q={lat},{long}&fields=census&api_key={api}"
@@ -62,6 +85,7 @@ class Geocoder:
         Block_End, Street_Dir, Street_Name, Suffix_Type, Suffix_Direction, Suffix_Qualifier, City, GeoState, Zip,
         Latitude, Longitude. If there is an error in the lookup, then it returns None
         """
+        logging.info("Get address %s", street_address)
         street_address = self._standardize_address(street_address)
         if not self.cached_geo.get(street_address):
             ret = self._geocode(street_address)
@@ -84,6 +108,8 @@ class Geocoder:
         'Street Num': '1638', 'Street Name': 'E 30th St', 'City': 'Baltimore', 'GeoState': 'MD', 'Zip': '21218',
         'Census Tract': '090600'}
         """
+        logging.info("Get info for lat/long: %s/%s", lat, long)
+
         if not (isinstance(lat, (int, float)) and isinstance(long, (int, float))):
             logging.error("Invalid lat/long")
             return None
@@ -140,31 +166,18 @@ class Geocoder:
         except IndexError:
             return None
 
-    @retry(stop_max_attempt_number=22,
-           wait_exponential_multiplier=1000,
-           wait_exponential_max=10000,
+    @retry(wait_exponential_multiplier=1000,
+           wait_exponential_max=10,
            retry_on_exception=retry_if_runtime_error)
+    @error_check
     def _reverse_geocode(self, lat, long) -> object:
-        logging.info("Get info for lat/long: %s/%s", lat, long)
-        req = requests.get(self.rev_geocode_url.format(lat=lat, long=long,
-                                                       api=self.geocodio_api_list[self.geocodio_api_index]))
-        if req.json().get("error"):
-            self.geocodio_api_index += 1
-            if self.geocodio_api_index >= len(self.geocodio_api_list):
-                raise IndexError("Exhaused API key list")
-            raise RuntimeError('Geocodio api error')
-        return self._get_geocode_result(req)
+        return requests.get(self.rev_geocode_url.format(lat=lat, long=long,
+                                                        api=self.geocodio_api_list[self.geocodio_api_index]))
 
-    @retry(stop_max_attempt_number=22,
-           wait_exponential_multiplier=1000,
-           wait_exponential_max=10000)
+    @retry(wait_exponential_multiplier=1000,
+           wait_exponential_max=10,
+           retry_on_exception=retry_if_runtime_error)
+    @error_check
     def _geocode(self, street_address) -> object:
-        logging.info("Get address %s", street_address)
-        req = requests.get(self.geocode_url.format(addr=street_address,
-                                                   api=self.geocodio_api_list[self.geocodio_api_index]))
-        if req.json().get("error"):
-            self.geocodio_api_index += 1
-            if self.geocodio_api_index >= len(self.geocodio_api_list):
-                raise IndexError("Exhaused API key list")
-            raise RuntimeError('Geocodio api error')
-        return self._get_geocode_result(req)
+        return requests.get(self.geocode_url.format(addr=street_address,
+                                                    api=self.geocodio_api_list[self.geocodio_api_index]))
