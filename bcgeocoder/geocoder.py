@@ -37,7 +37,7 @@ def error_check(func):
         if req.json().get("error"):
             logging.error(req.json().get("error"))
             return None
-        return self._get_geocode_result(req)
+        return self.get_geocode_result(req)
     return inner
 
 
