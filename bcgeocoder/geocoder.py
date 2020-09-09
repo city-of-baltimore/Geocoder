@@ -33,7 +33,8 @@ def error_check(func):
         if req.json().get("error") and req.json().get("error").startswith('Please add a payment method.'):
             self.geocodio_api_index += 1
             raise RuntimeError('Geocodio api error')
-        elif req.json().get("error"):
+
+        if req.json().get("error"):
             logging.error(req.json().get("error"))
             return None
         return self._get_geocode_result(req)
@@ -126,7 +127,13 @@ class Geocoder:
         return self.cached_geo.get((lat, long))
 
     @staticmethod
-    def _get_geocode_result(response):
+    def get_geocode_result(response):
+        """
+        Processes a response from the geocodio api and standardizes it
+        :param response: The raw response from geocodio
+        :return: None if there is an error. Otherwise, a dictionary with the following values: Latitude, Longitude,
+        Street Address, Street Num, Street Name, City, GeoState, Zip, Census Tract
+        """
         try:
             geocode_result = response.json()["results"]
         except json.JSONDecodeError:
