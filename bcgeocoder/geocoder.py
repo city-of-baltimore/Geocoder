@@ -35,7 +35,7 @@ def error_check(func):
             raise RuntimeError('Geocodio api error')
 
         if req.json().get("error"):
-            logging.error(req.json().get("error"))
+            logging.error("Geocodio reported error: %s", req.json().get("error"))
             return None
         return self.get_geocode_result(req)
     return inner
@@ -75,6 +75,7 @@ class Geocoder:
         street_address = re.sub(r'^(\d*) S\.? (.*)', r'\1 SOUTH \2', street_address)
         street_address = re.sub(r'^(\d*) E\.? (.*)', r'\1 EAST \2', street_address)
         street_address = re.sub(r'^(\d*) W\.? (.*)', r'\1 WEST \2', street_address)
+        street_address = street_address.replace(' BLK ', ' ')
 
         return street_address
 
