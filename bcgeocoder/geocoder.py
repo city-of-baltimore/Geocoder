@@ -5,17 +5,16 @@ import logging
 import os
 import pickle
 import re
+from typing import Optional
+
 import requests
-from retrying import retry
+
+from .geocodio_types import CachedGeoType, GeocodeResult
+
+logging.getLogger(__name__)
 
 
-logging.basicConfig(
-    format='%(asctime)s %(levelname)-8s %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S')
-
-
-def retry_if_runtime_error(exception):
+def retry_if_runtime_error(exception: Exception) -> bool:
     """Return True if we should retry, False otherwise"""
     return isinstance(exception, RuntimeError)
 
@@ -26,6 +25,7 @@ def error_check(func):
     :param func:
     :return:
     """
+
     def inner(self, *args, **kwargs):
         if self.geocodio_api_index >= len(self.geocodio_api_list):
             return None
@@ -38,12 +38,14 @@ def error_check(func):
             logging.error("Geocodio reported error: %s", req.json().get("error"))
             return None
         return self.get_geocode_result(req)
+
     return inner
 
 
 class Geocoder:
     """Handles lookups to geocodio, while also supporting multiple API keys and result caching"""
-    def __init__(self, geocodio_api_key, pickle_filename='geo.pickle'):
+
+    def __init__(self, geocodio_api_key: str, pickle_filename: str = 'geo.pickle'):
         if isinstance(geocodio_api_key, str):
             self.geocodio_api_list = [geocodio_api_key]
         elif isinstance(geocodio_api_key, list):
@@ -53,11 +55,11 @@ class Geocoder:
         else:
             raise TypeError("geocodio_api_key is of wrong type")
 
-        self.geocodio_api_index = 0
-        self.geocode_url = "https://api.geocod.io/v1.6/geocode?q={addr}&fields=census&api_key={api}"
-        self.rev_geocode_url = "https://api.geocod.io/v1.6/reverse?q={lat},{long}&fields=census&api_key={api}"
-        self.pickle_filename = pickle_filename
-        self.cached_geo = {}
+        self.geocodio_api_index: int = 0
+        self.geocode_url: str = "https://api.geocod.io/v1.6/geocode?q={addr}&fields=census&api_key={api}"
+        self.rev_geocode_url: str = "https://api.geocod.io/v1.6/reverse?q={lat},{long}&fields=census&api_key={api}"
+        self.pickle_filename: str = pickle_filename
+        self.cached_geo: CachedGeoType = {}
 
     def __enter__(self):
         if os.path.exists(self.pickle_filename):
@@ -69,7 +71,7 @@ class Geocoder:
             pickle.dump(self.cached_geo, proc_files)
 
     @staticmethod
-    def _standardize_address(street_address):
+    def _standardize_address(street_address: str) -> str:
         street_address = street_address.upper()
         street_address = re.sub(r'^(\d*) N\.? (.*)', r'\1 NORTH \2', street_address)
         street_address = re.sub(r'^(\d*) S\.? (.*)', r'\1 SOUTH \2', street_address)
@@ -79,7 +81,7 @@ class Geocoder:
 
         return street_address
 
-    def geocode(self, street_address) -> dict:
+    def geocode(self, street_address: str) -> Optional[GeocodeResult]:
         """
         Pulls the latitude and longitude of an address, either from the internet, or the cached version
         :param street_address: Address to search. Can be anything that would be searched on google maps.
@@ -94,13 +96,14 @@ class Geocoder:
             if ret is None:
                 return None
 
-            # Save as both the original formatted address, and the reformatted version
+            # Save as the original formatted address, the reformatted version, and the reverse lookup
             self.cached_geo[street_address] = ret
             self.cached_geo[ret["Street Address"]] = ret
+            self.cached_geo[(ret['latitude'], ret['longitude'])] = ret
 
         return self.cached_geo.get(street_address)
 
-    def reverse_geocode(self, lat, long):
+    def reverse_geocode(self, lat: float, long: float):
         """
         Does a reverse geocode lookup based on the lat/long
         :param lat: Latitude of the point to reverse lookup
@@ -110,6 +113,7 @@ class Geocoder:
         'Street Num': '1638', 'Street Name': 'E 30th St', 'City': 'Baltimore', 'GeoState': 'MD', 'Zip': '21218',
         'Census Tract': '090600'}
         """
+
         logging.info("Get info for lat/long: %s/%s", lat, long)
 
         if not (isinstance(lat, (int, float)) and isinstance(long, (int, float))):
@@ -122,13 +126,15 @@ class Geocoder:
 
         if not self.cached_geo.get((lat, long)):
             ret = self._reverse_geocode(lat, long)
+
             if ret is None:
                 return None
             self.cached_geo[(lat, long)] = ret
+
         return self.cached_geo.get((lat, long))
 
     @staticmethod
-    def get_geocode_result(response):
+    def get_geocode_result(response) -> Optional[GeocodeResult]:
         """
         Processes a response from the geocodio api and standardizes it
         :param response: The raw response from geocodio
@@ -162,15 +168,15 @@ class Geocoder:
         try:
             census_year = next(iter(geocode_result["fields"]["census"].keys()))
 
-            return {"Latitude": geocode_result["location"]["lat"],
-                    "Longitude": geocode_result["location"]["lng"],
-                    "Street Address": geocode_result["formatted_address"],
-                    "Street Num": geocode_result["address_components"].get("number"),
-                    "Street Name": geocode_result["address_components"].get("formatted_street"),
-                    "City": geocode_result["address_components"]["city"],
-                    "GeoState": geocode_result["address_components"]["state"],
-                    "Zip": geocode_result["address_components"]["zip"],
-                    "Census Tract": geocode_result["fields"]["census"][census_year]["tract_code"]}
+            return {"latitude": geocode_result["location"]["lat"],
+                    "longitude": geocode_result["location"]["lng"],
+                    "street_address": geocode_result["formatted_address"],
+                    "street_num": geocode_result["address_components"].get("number"),
+                    "street_name": geocode_result["address_components"].get("formatted_street"),
+                    "city": geocode_result["address_components"]["city"],
+                    "state": geocode_result["address_components"]["state"],
+                    "zip": geocode_result["address_components"]["zip"],
+                    "census_tract": geocode_result["fields"]["census"][census_year]["tract_code"]}
         except IndexError:
             return None
 
@@ -178,14 +184,14 @@ class Geocoder:
            wait_exponential_max=10,
            retry_on_exception=retry_if_runtime_error)
     @error_check
-    def _reverse_geocode(self, lat, long) -> object:
+    def _reverse_geocode(self, lat: float, long: float) -> GeocodioResult:
         return requests.get(self.rev_geocode_url.format(lat=lat, long=long,
-                                                        api=self.geocodio_api_list[self.geocodio_api_index]))
+                                                        api=self.geocodio_api_list[self.geocodio_api_index])).json()
 
     @retry(wait_exponential_multiplier=1000,
            wait_exponential_max=10,
            retry_on_exception=retry_if_runtime_error)
     @error_check
-    def _geocode(self, street_address) -> object:
+    def _geocode(self, street_address: str) -> GeocodioResult:
         return requests.get(self.geocode_url.format(addr=street_address,
-                                                    api=self.geocodio_api_list[self.geocodio_api_index]))
+                                                    api=self.geocodio_api_list[self.geocodio_api_index])).json()
