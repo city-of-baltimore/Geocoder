@@ -5,7 +5,7 @@ import logging
 import os
 import pickle
 import re
-from typing import Optional
+from typing import List, Optional
 from retrying import retry  # type: ignore
 
 import requests
@@ -24,7 +24,7 @@ def retry_if_runtime_error(exception: Exception) -> bool:
     return isinstance(exception, RuntimeError)
 
 
-def error_check(func):
+def error_check(func) -> Optional[GeocodeResult]:
     """
     Decorator that handles error checking around the geocod.io web call
     :param func:
@@ -108,7 +108,7 @@ class Geocoder:
 
         return self.cached_geo.get(street_address)
 
-    def reverse_geocode(self, lat: float, long: float):
+    def reverse_geocode(self, lat: float, long: float) -> Optional[GeocodeResult]:
         """
         Does a reverse geocode lookup based on the lat/long
         :param lat: Latitude of the point to reverse lookup
@@ -189,14 +189,18 @@ class Geocoder:
            wait_exponential_max=10,
            retry_on_exception=retry_if_runtime_error)
     @error_check
-    def _reverse_geocode(self, lat: float, long: float) -> GeocodioResult:
-        return requests.get(self.rev_geocode_url.format(lat=lat, long=long,
-                                                        api=self.geocodio_api_list[self.geocodio_api_index])).json()
+    def _reverse_geocode(self, lat: float, long: float) -> List[GeocodeResult]:
+        resp: GeocodioResult = requests.get(self.rev_geocode_url.format(lat=lat, long=long,
+                                                                        api=self.geocodio_api_list[
+                                                                            self.geocodio_api_index])).json()
+        return resp.get('results')
 
     @retry(wait_exponential_multiplier=1000,
            wait_exponential_max=10,
            retry_on_exception=retry_if_runtime_error)
     @error_check
-    def _geocode(self, street_address: str) -> GeocodioResult:
-        return requests.get(self.geocode_url.format(addr=street_address,
-                                                    api=self.geocodio_api_list[self.geocodio_api_index])).json()
+    def _geocode(self, street_address: str) -> List[GeocodeResult]:
+        resp: GeocodioResult = requests.get(self.geocode_url.format(addr=street_address,
+                                                                    api=self.geocodio_api_list[
+                                                                        self.geocodio_api_index])).json()
+        return resp.get('results')
