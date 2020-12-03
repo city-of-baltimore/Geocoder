@@ -31,7 +31,7 @@ class GeocodioLocation(TypedDict):  # pylint:disable=inherit-non-class,too-few-p
     source: Optional[str]  # pylint:disable=unsubscriptable-object
 
 
-class GeocodioResult(TypedDict):  # pylint:disable=inherit-non-class
+class GeocodioResult(TypedDict):  # pylint:disable=inherit-non-class,too-few-public-methods
     """Dictionary used as the result to Geocodio queries. Used only for typing."""
     input: GeocodioLocation
     results: List[GeocodioLocation]  # pylint:disable=unsubscriptable-object
@@ -52,5 +52,5 @@ class GeocodeResult(TypedDict):  # pylint:disable=inherit-non-class,too-few-publ
 
 CachedGeoKeyRev = Tuple[float, float]  # pylint:disable=unsubscriptable-object,too-few-public-methods
 CachedGeoKeyForward = str
-CachedGeoKey = Union[CachedGeoKeyRev, CachedGeoKeyForward]
-CachedGeoType = Dict[CachedGeoKey, GeocodeResult]
+CachedGeoKey = Union[CachedGeoKeyRev, CachedGeoKeyForward]  # pylint:disable=unsubscriptable-object
+CachedGeoType = Dict[CachedGeoKey, GeocodeResult]  # pylint:disable=unsubscriptable-object
