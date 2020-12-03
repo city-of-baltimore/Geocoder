@@ -6,7 +6,7 @@ import os
 import pickle
 import re
 from typing import Optional
-from retrying import retry
+from retrying import retry  # type: ignore
 
 import requests
 
