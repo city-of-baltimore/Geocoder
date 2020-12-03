@@ -6,12 +6,17 @@ import os
 import pickle
 import re
 from typing import Optional
+from retrying import retry
 
 import requests
 
-from .geocodio_types import CachedGeoType, GeocodeResult
+from .geocodio_types import CachedGeoType, GeocodeResult, GeocodioResult
 
 logging.getLogger(__name__)
+
+
+# Note: We disable unsubscriptable-object because of bug bug: https://github.com/PyCQA/pylint/issues/3882 in pylint.
+# When that is fixed, we can remove the pylint unscriptable object disables
 
 
 def retry_if_runtime_error(exception: Exception) -> bool:
@@ -81,7 +86,7 @@ class Geocoder:
 
         return street_address
 
-    def geocode(self, street_address: str) -> Optional[GeocodeResult]:
+    def geocode(self, street_address: str) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object
         """
         Pulls the latitude and longitude of an address, either from the internet, or the cached version
         :param street_address: Address to search. Can be anything that would be searched on google maps.
@@ -134,7 +139,7 @@ class Geocoder:
         return self.cached_geo.get((lat, long))
 
     @staticmethod
-    def get_geocode_result(response) -> Optional[GeocodeResult]:
+    def get_geocode_result(response) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object
         """
         Processes a response from the geocodio api and standardizes it
         :param response: The raw response from geocodio
