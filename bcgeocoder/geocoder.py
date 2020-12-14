@@ -50,15 +50,10 @@ def error_check(func) -> Optional[GeocodeResult]:
 class Geocoder:
     """Handles lookups to geocodio, while also supporting multiple API keys and result caching"""
 
-    def __init__(self, geocodio_api_key: str, pickle_filename: str = 'geo.pickle'):
-        if isinstance(geocodio_api_key, str):
-            self.geocodio_api_list = [geocodio_api_key]
-        elif isinstance(geocodio_api_key, list):
-            self.geocodio_api_list = geocodio_api_key
-        elif len(self.geocodio_api_list) == 1 and self.geocodio_api_list[0] == 'xxx':
+    def __init__(self, geocodio_api_key: List[str], pickle_filename: str = 'geo.pickle'):
+        self.geocodio_api_list = geocodio_api_key
+        if len(self.geocodio_api_list) == 1 and self.geocodio_api_list[0] == 'xxx':
             raise ValueError("The GAPI key must be set in creds.py")
-        else:
-            raise TypeError("geocodio_api_key is of wrong type")
 
         self.geocodio_api_index: int = 0
         self.geocode_url: str = "https://api.geocod.io/v1.6/geocode?q={addr}&fields=census&api_key={api}"
