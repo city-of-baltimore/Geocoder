@@ -24,14 +24,14 @@ def retry_if_runtime_error(exception: Exception) -> bool:
     return isinstance(exception, RuntimeError)
 
 
-def error_check(func) -> Optional[GeocodeResult]:
+def error_check(func) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object ; see above comment
     """
     Decorator that handles error checking around the geocod.io web call
     :param func:
     :return:
     """
 
-    def inner(self, *args, **kwargs):
+    def inner(self, *args, **kwargs) -> Optional[GeocodeResult]:
         if self.geocodio_api_index >= len(self.geocodio_api_list):
             return None
         req = func(self, *args, **kwargs)
@@ -81,7 +81,7 @@ class Geocoder:
 
         return street_address
 
-    def geocode(self, street_address: str) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object
+    def geocode(self, street_address: str) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object ; see above comment
         """
         Pulls the latitude and longitude of an address, either from the internet, or the cached version
         :param street_address: Address to search. Can be anything that would be searched on google maps.
@@ -103,7 +103,7 @@ class Geocoder:
 
         return self.cached_geo.get(street_address)
 
-    def reverse_geocode(self, lat: float, long: float) -> Optional[GeocodeResult]:
+    def reverse_geocode(self, lat: float, long: float) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object ; see above comment
         """
         Does a reverse geocode lookup based on the lat/long
         :param lat: Latitude of the point to reverse lookup
@@ -134,7 +134,7 @@ class Geocoder:
         return self.cached_geo.get((lat, long))
 
     @staticmethod
-    def get_geocode_result(response) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object
+    def get_geocode_result(response) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object ; see above comment
         """
         Processes a response from the geocodio api and standardizes it
         :param response: The raw response from geocodio
