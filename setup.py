@@ -7,6 +7,7 @@ setuptools.setup(
     author_email="brian.seel@baltimorecity.gov",
     description="(Baltimore City) Geocodio wrapper with address caching and Baltimore City specific checks",
     packages=setuptools.find_packages(),
+    package_data={'src': ['py.typed'],},
     python_requires='>=3.0',
     install_requires=[
         'requests',

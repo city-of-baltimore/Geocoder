@@ -4,17 +4,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+         pip install -r requirements.txt
       - name: Lint with pylint
         run: |
-          pip install -U pylint -r requirements.txt
-          pylint bcgeocoder
+          pylint src
       - name: Lint with flake8
         run : |
-          pip install -U flake8 -r requirements.txt
-          flake8 --config=.flake8 bcgeocoder
+          flake8 --config=.flake8 src
       - name: Look for security issues with Bandit
         run: |
-          pip install -U bandit -r requirements.txt
-          bandit bcgeocoder
+          bandit src
+      - name: Type checking
+        run: |
+          mypy src
