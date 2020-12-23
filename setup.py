@@ -1,16 +1,17 @@
-import setuptools
+from setuptools import setup, find_packages
 
-setuptools.setup(
-    name="bcgeocoder",
+setup(
+    name="balt_geocoder",
     version="0.1",
     author="Brian Seel",
     author_email="brian.seel@baltimorecity.gov",
     description="(Baltimore City) Geocodio wrapper with address caching and Baltimore City specific checks",
-    packages=setuptools.find_packages(),
-    package_data={'src': ['py.typed'],},
+    packages=find_packages('src'),
+    package_data={'balt_geocoder': ['py.typed'], },
     python_requires='>=3.0',
+    package_dir={'': 'src'},
     install_requires=[
         'requests',
-        'retrying',
+        'tenacity',
     ],
 )
