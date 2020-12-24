@@ -8,7 +8,7 @@ from . import geocoder_constants
 
 sys.path.insert(0, str(Path.cwd().parent))
 
-from src.geocoder import APIFatalError, \
+from balt_geocoder.geocoder import APIFatalError, \
     Geocoder  # pylint:disable=wrong-import-position,wrong-import-order  # noqa: E402
 
 

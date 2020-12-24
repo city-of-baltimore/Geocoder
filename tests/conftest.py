@@ -8,9 +8,7 @@ import pytest
 
 from . import geocoder_constants
 
-sys.path.insert(0, str(Path.cwd().parent))
-
-from src import Geocoder  # pylint:disable=wrong-import-position,wrong-import-order  # noqa: E402
+from balt_geocoder import Geocoder  # pylint:disable=wrong-import-position,wrong-import-order  # noqa: E402
 
 
 def pytest_addoption(parser):
@@ -21,7 +19,9 @@ def pytest_addoption(parser):
 @pytest.fixture(name='api_key')
 def api_key_fixture(request):
     """Command line argument for the API key"""
-    return request.config.getoption("apikey")
+    api_key = request.config.getoption("apikey")
+    assert api_key, "Expected --apikey to be provided"
+    return api_key
 
 
 @pytest.fixture

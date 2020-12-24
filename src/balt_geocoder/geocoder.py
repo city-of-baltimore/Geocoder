@@ -11,16 +11,13 @@ from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 import requests
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential  # type: ignore
 
-
 from .geocodio_types import GeocodeResult, GeocodioResult, GeocodioLocation, GeocodioCoordinates, \
     GeocodioAddressComponents, GeocodioCensusField, GeocodioCensusYear, GeocodioCensusYearDict
 
 logging.getLogger(__name__)
 
-
 # Note: We disable unsubscriptable-object because of bug bug: https://github.com/PyCQA/pylint/issues/3882 in pylint.
 # When that is fixed, we can remove the pylint unscriptable object disables
-
 
 TFunc = Callable[..., Any]
 

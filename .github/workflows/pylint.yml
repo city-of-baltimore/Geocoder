@@ -6,18 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - name: Install dependencies
+      - name: Tox
         run: |
-         pip install -r requirements.txt
-      - name: Lint with pylint
-        run: |
-          pylint src
-      - name: Lint with flake8
-        run : |
-          flake8 --config=.flake8 src
-      - name: Look for security issues with Bandit
-        run: |
-          bandit src
-      - name: Type checking
-        run: |
-          mypy src
+          pip install tox
+          tox -- --apikey ${{ secrets.GEOCODIO_API_KEY }}
