@@ -8,5 +8,5 @@ jobs:
       - uses: actions/setup-python@v2
       - name: Tox
         run: |
-          pip install tox colorama
-          tox
+          pip install tox
+          tox -- --apikey ${{ secrets.GEOCODIO_API_KEY }}
