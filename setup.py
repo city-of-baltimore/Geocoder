@@ -11,7 +11,8 @@ setup(
     python_requires='>=3.0',
     package_dir={'': 'src'},
     install_requires=[
-        'requests',
-        'tenacity',
+        'requests~=2.25.1',
+        'tenacity~=6.3.1',
+        'loguru~=0.5.3'
     ],
 )
