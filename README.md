@@ -6,3 +6,6 @@ Usage:
     from bcgeocoder import Geocoder
     gc = Geocoder(['apikey1', 'apikey2', ...])
     res = gc.reverse_geocode(39.28, 76.59)
+
+# Testing
+To run tests, run `tox -- --apikey <GEOCOODIO API KEY>`

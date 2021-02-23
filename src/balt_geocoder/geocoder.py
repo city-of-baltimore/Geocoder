@@ -1,7 +1,6 @@
 """Geocodes addresses through geocod.io with lookup caching"""
 
 import json
-import logging
 import os
 import pickle
 import re
@@ -9,15 +8,11 @@ from functools import wraps
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 
 import requests
+from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential  # type: ignore
 
 from .geocodio_types import GeocodeResult, GeocodioResult, GeocodioLocation, GeocodioCoordinates, \
     GeocodioAddressComponents, GeocodioCensusField, GeocodioCensusYear, GeocodioCensusYearDict
-
-logging.getLogger(__name__)
-
-# Note: We disable unsubscriptable-object because of bug bug: https://github.com/PyCQA/pylint/issues/3882 in pylint.
-# When that is fixed, we can remove the pylint unscriptable object disables
 
 TFunc = Callable[..., Any]
 
@@ -68,7 +63,7 @@ class Geocoder:
     :param pickle_filename: name of the file to store cached results. If it exists, then cached values will be used.
     :param pickle_filename_rev: name of the file to store cached results. If it exists, then cached values will be used.
     """
-    def __init__(self, geocodio_api_key: Union[List[str], str],  # pylint:disable=unsubscriptable-object ; see above comment
+    def __init__(self, geocodio_api_key: Union[List[str], str],
                  pickle_filename: str = 'geo.pickle',
                  pickle_filename_rev: str = 'geo_rev.pickle'):
         self.geocodio_api_list = [geocodio_api_key] if isinstance(geocodio_api_key, str) else geocodio_api_key
@@ -85,7 +80,6 @@ class Geocoder:
         self.cached_geo: Dict[str, GeocodeResult] = {}
         self.cached_geo_rev: Dict[Tuple[float, float], GeocodeResult] = {}
 
-    def __enter__(self):
         if os.path.exists(self.pickle_filename):
             with open(self.pickle_filename, 'rb') as pkl:
                 self.cached_geo = pickle.load(pkl)
@@ -94,6 +88,7 @@ class Geocoder:
             with open(self.pickle_filename_rev, 'rb') as pkl:
                 self.cached_geo_rev = pickle.load(pkl)
 
+    def __enter__(self):
         return self
 
     def __exit__(self, *a):
@@ -116,7 +111,7 @@ class Geocoder:
 
         return street_address
 
-    def geocode(self, street_address: str) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object ; see above comment
+    def geocode(self, street_address: str) -> Optional[GeocodeResult]:
         """
         Pulls the latitude and longitude of an address, either from the internet, or the cached version
         :param street_address: Address to search. Can be anything that would be searched on google maps.
@@ -124,13 +119,13 @@ class Geocoder:
         Block_End, Street_Dir, Street_Name, Suffix_Type, Suffix_Direction, Suffix_Qualifier, City, GeoState, Zip,
         Latitude, Longitude. If there is an error in the lookup, then it returns None
         """
-        logging.info('Get address %s', street_address)
+        logger.info('Get address {address}', address=street_address)
         std_address: str = self._standardize_address(street_address)
         if not self.cached_geo.get(std_address):
             response: GeocodioResult = self._geocode(std_address)
 
             for loc in response.get('results', []):
-                ret: Optional[GeocodeResult] = self.get_geocode_result(loc)  # pylint:disable=unsubscriptable-object ; see above comment
+                ret: Optional[GeocodeResult] = self.get_geocode_result(loc)
 
                 if ret:
                     ret = cast(GeocodeResult, ret)
@@ -138,14 +133,14 @@ class Geocoder:
 
         return self.cached_geo.get(std_address)
 
-    def reverse_geocode(self, lat: float, long: float) -> Optional[GeocodeResult]:  # pylint:disable=unsubscriptable-object ; see above comment
+    def reverse_geocode(self, lat: float, long: float) -> Optional[GeocodeResult]:
         """
         Does a reverse geocode lookup based on the lat/long
         :param lat: Latitude of the point to reverse lookup
         :param long: Longitude of the point to reverse lookup
         :return: A dictionary with location data
         """
-        logging.info('Get info for lat/long: %s/%s', lat, long)
+        logger.info('Get info for lat/long: {lat}/{long}', lat=lat, long=long)
 
         if lat is None or long is None:
             return None
@@ -159,7 +154,7 @@ class Geocoder:
             response: GeocodioResult = self._reverse_geocode(lat_rnd, long_rnd)
 
             for loc in response.get('results', []):
-                ret: Optional[GeocodeResult] = self.get_geocode_result(loc)  # pylint:disable=unsubscriptable-object ; see above comment
+                ret: Optional[GeocodeResult] = self.get_geocode_result(loc)
 
                 if ret:
                     ret = cast(GeocodeResult, ret)
@@ -206,7 +201,7 @@ class Geocoder:
             self.cached_geo_rev[rev_lookup] = geocode_result
 
     @staticmethod
-    def get_geocode_result(geocodio_loc: GeocodioLocation) -> GeocodeResult:  # pylint:disable=unsubscriptable-object ; see above comment
+    def get_geocode_result(geocodio_loc: GeocodioLocation) -> GeocodeResult:
         """
         Processes a json response from the geocodio api and standardizes it
         :param geocodio_loc: The json dictionary from geocodio
@@ -238,7 +233,7 @@ class Geocoder:
 
             # We only want city results
             if not addr_dict.get('county', '').upper() == 'BALTIMORE CITY':
-                logging.warning('Got non-city result: %s', geocodio_loc)
+                logger.warning('Got non-city result: {loc}', loc=geocodio_loc)
 
             ret['number'] = addr_dict.get('number', '')
             ret['predirectional'] = addr_dict.get('predirectional', '')
@@ -264,7 +259,7 @@ class Geocoder:
                 census_dict: GeocodioCensusYear = cast(GeocodioCensusYear,
                                                        fields_dict.get('census'))  # type checking
 
-                census_year = next(iter(census_dict.keys()))
+                census_year: str = str(next(iter(census_dict.keys())))
                 if census_dict.get(census_year):
                     census_year_dict: GeocodioCensusYearDict = cast(GeocodioCensusYearDict,
                                                                     census_dict.get(census_year))  # type checking

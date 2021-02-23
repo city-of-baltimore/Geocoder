@@ -1,8 +1,6 @@
 """Pytest directory-specific hook implementations"""
+import os
 import pickle
-import sys
-from pathlib import Path
-import tempfile
 
 import pytest
 
@@ -25,39 +23,27 @@ def api_key_fixture(request):
 
 
 @pytest.fixture
-def geocoder_fixture(api_key):
+def geocoder_fixture(api_key, tmpdir):
     """Fixture for the Geocoder class"""
-    with tempfile.TemporaryFile() as forward_geo:
-        with tempfile.TemporaryFile() as rev_geo:
-            ret = Geocoder(api_key, forward_geo.name, rev_geo.name)
-    return ret
+    return Geocoder(api_key, os.path.join(tmpdir, 'geo.pickle'), os.path.join(tmpdir, 'revgeo.pickle'))
 
 
 @pytest.fixture
-def geocoder_fixture_bad_api():
+def geocoder_fixture_bad_api(tmpdir):
     """Fixture for the Geocoder class with a bad API key"""
-    with tempfile.TemporaryFile() as forward_geo:
-        with tempfile.TemporaryFile() as rev_geo:
-            ret = Geocoder('BADAPI', forward_geo.name, rev_geo.name)
-    return ret
+    return Geocoder('BADAPI', os.path.join(tmpdir, 'geo.pickle'), os.path.join(tmpdir, 'revgeo.pickle'))
 
 
 @pytest.fixture
-def geocoder_fixture_demo_api():
+def geocoder_fixture_demo_api(tmpdir):
     """Fixture for the Geocoder class with a quickly exhaustible API key"""
-    with tempfile.TemporaryFile() as forward_geo:
-        with tempfile.TemporaryFile() as rev_geo:
-            ret = Geocoder('DEMO', forward_geo.name, rev_geo.name)
-    return ret
+    return Geocoder('DEMO', os.path.join(tmpdir, 'geo.pickle'), os.path.join(tmpdir, 'revgeo.pickle'))
 
 
 @pytest.fixture
-def geocoder_fixture_bad_and_good_api(api_key):
+def geocoder_fixture_bad_and_good_api(api_key, tmpdir):
     """Fixture for the Geocoder class that has a bad API key followed by a good key"""
-    with tempfile.TemporaryFile() as forward_geo:
-        with tempfile.TemporaryFile() as rev_geo:
-            ret = Geocoder(['BADAPI', api_key], forward_geo.name, rev_geo.name)
-    return ret
+    return Geocoder(['BADAPI', api_key], os.path.join(tmpdir, 'geo.pickle'), os.path.join(tmpdir, 'revgeo.pickle'))
 
 
 @pytest.fixture
