@@ -104,6 +104,9 @@ class Geocoder:
         street_address = street_address.upper()
         street_address = street_address.replace(' BLK ', ' ')
         street_address = street_address.replace(' BLOCK ', ' ')
+        street_address = street_address.replace('JONES FALLS', 'I-83')
+        street_address = street_address.replace('JONES FALLS EXPWY', 'I-83')
+        street_address = street_address.replace('JONES FALLS EXPRESSWAY', 'I-83')
         street_address = re.sub(r'^(\d*) N\.? (.*)', r'\1 NORTH \2', street_address)
         street_address = re.sub(r'^(\d*) S\.? (.*)', r'\1 SOUTH \2', street_address)
         street_address = re.sub(r'^(\d*) E\.? (.*)', r'\1 EAST \2', street_address)
@@ -115,9 +118,7 @@ class Geocoder:
         """
         Pulls the latitude and longitude of an address, either from the internet, or the cached version
         :param street_address: Address to search. Can be anything that would be searched on google maps.
-        :return: Dictionary with the keys Block_Start, Street_Name, Census_Tract, Street_Address, Block_Start,
-        Block_End, Street_Dir, Street_Name, Suffix_Type, Suffix_Direction, Suffix_Qualifier, City, GeoState, Zip,
-        Latitude, Longitude. If there is an error in the lookup, then it returns None
+        :return: Optional GeocodeResult type. If there is an error in the lookup, then it returns None
         """
         logger.info('Get address {address}', address=street_address)
         std_address: str = self._standardize_address(street_address)
@@ -205,8 +206,7 @@ class Geocoder:
         """
         Processes a json response from the geocodio api and standardizes it
         :param geocodio_loc: The json dictionary from geocodio
-        :return: None if there is an error. Otherwise, a dictionary with the following values: Latitude, Longitude,
-        Street Address, Street Num, Street Name, City, GeoState, Zip, Census Tract
+        :return: None if there is an error. Otherwise, a dictionary with the GeocodeResult values
         """
         ret: GeocodeResult = {'latitude': 0.0,
                               'longitude': 0.0,
@@ -273,10 +273,11 @@ class Geocoder:
     @error_check
     def _reverse_geocode(self, lat: float, long: float) -> GeocodioResult:
         """Helper that calls the Geocod.io reverse geocode api"""
-        resp: requests.Response = requests.get('https://api.geocod.io/v1.6/reverse?q={lat},{long}&fields=census&api_key'
-                                               '={api}'.format(lat=lat, long=long,
-                                                               api=self.geocodio_api_list[self.geocodio_api_index]))
-        return cast(GeocodioResult, resp)  # Error_check decorator returns it as this type when it calls json()
+        payload = {'q': '{},{}'.format({lat}, {long}),
+                   'fields': 'census',
+                   'api_key': self.geocodio_api_list[self.geocodio_api_index]}
+        resp: requests.Response = requests.get('https://api.geocod.io/v1.6/reverse', params=payload)
+        return cast(GeocodioResult, resp)  # error_check decorator returns it as this type when it calls json()
 
     @retry(retry=retry_if_exception_type(RuntimeError) | retry_if_exception_type(json.JSONDecodeError),
            stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=5, max=40), reraise=True)
@@ -284,7 +285,9 @@ class Geocoder:
     @error_check
     def _geocode(self, street_address: str) -> GeocodioResult:
         """Helper that calls the Geocod.io geocode api"""
-        resp: requests.Response = requests.get('https://api.geocod.io/v1.6/geocode?q={addr}&fields=census&api_key={api}'
-                                               ''.format(addr=street_address,
-                                                         api=self.geocodio_api_list[self.geocodio_api_index]))
-        return cast(GeocodioResult, resp)  # Error_check decorator returns i as this type when it calls json()
+        payload = {'q': street_address,
+                   'fields': 'census',
+                   'api_key': self.geocodio_api_list[self.geocodio_api_index]}
+
+        resp: requests.Response = requests.get('https://api.geocod.io/v1.6/geocode', params=payload)
+        return cast(GeocodioResult, resp)  # error_check decorator returns it as this type when it calls json()
