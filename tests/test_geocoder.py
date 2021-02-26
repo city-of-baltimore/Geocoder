@@ -1,15 +1,9 @@
 """Test suite for src.geocoder"""
-import sys
-from pathlib import Path
-
 import pytest
 
 from . import geocoder_constants
 
-sys.path.insert(0, str(Path.cwd().parent))
-
-from balt_geocoder.geocoder import APIFatalError, \
-    Geocoder  # pylint:disable=wrong-import-position,wrong-import-order  # noqa: E402
+from balt_geocoder.geocoder import APIFatalError, Geocoder
 
 
 def _validate_geocode_result(expected, actual):
@@ -64,6 +58,13 @@ def test_geocode(geocoder_fixture):
     """Tests the public geocode method"""
     ret = geocoder_fixture.geocode('1309 N Charles St Baltimore MD')
     _validate_geocode_result(geocoder_constants.geocode_result_data, ret)
+
+
+def test_geocode_bad_characters(geocoder_fixture):
+    """Tests with a character that needs to be url encoded"""
+    # This is pointing to the end of the JFX. If geocodio fixes it, this test will fail.
+    ret_exit7 = geocoder_fixture.geocode("JONES FALLS EXPWY and EXIT #7, Baltimore, Maryland")
+    _validate_geocode_result(geocoder_constants.geocode_bad_characters, ret_exit7)
 
 
 def test_reverse_geocode(geocoder_fixture):

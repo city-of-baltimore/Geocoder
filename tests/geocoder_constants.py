@@ -155,6 +155,26 @@ geocode_rev_result_data = {
     'source': 'Statewide',
 }
 
+# verification for test_geocode_bad_characters
+geocode_bad_characters = {
+    'latitude': 39.369861,
+    'longitude': -76.651934,
+    'formatted_address': 'I-83, Baltimore, MD 21202',
+    'accuracy': 0.6,
+    'accuracy_type': 'street_center',
+    'source': 'TIGER/Line® dataset from the US Census Bureau', 'number': '',
+    'predirectional': '',
+    'street': 'I-83',
+    'suffix': '',
+    'formatted_street': 'I-83',
+    'city': 'Baltimore',
+    'county': 'Baltimore city',
+    'state': 'MD',
+    'zip': '21202',
+    'country': 'US',
+    'census_tract': '271501'
+}
+
 # complete dummy data
 test_geocode_result = {
     'latitude': 66.66,
