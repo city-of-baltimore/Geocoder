@@ -107,6 +107,7 @@ class Geocoder:
         street_address = street_address.replace('JONES FALLS', 'I-83')
         street_address = street_address.replace('JONES FALLS EXPWY', 'I-83')
         street_address = street_address.replace('JONES FALLS EXPRESSWAY', 'I-83')
+        street_address = street_address.replace(' HW', ' HWY')
         street_address = re.sub(r'^(\d*) N\.? (.*)', r'\1 NORTH \2', street_address)
         street_address = re.sub(r'^(\d*) S\.? (.*)', r'\1 SOUTH \2', street_address)
         street_address = re.sub(r'^(\d*) E\.? (.*)', r'\1 EAST \2', street_address)
