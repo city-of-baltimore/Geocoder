@@ -72,7 +72,7 @@ class GeocodioErrorResult(TypedDict):  # pylint:disable=inherit-non-class,too-fe
     error: str
 
 
-class GeocodeResult(TypedDict, GeocodioAddressComponents):  # pylint:disable=inherit-non-class,too-few-public-methods
+class GeocodeResult(GeocodioAddressComponents, TypedDict):  # pylint:disable=inherit-non-class,too-few-public-methods
     """Dictionary returned by the Geocoder. Used only for typing."""
     latitude: float
     longitude: float
