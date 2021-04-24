@@ -108,6 +108,7 @@ class Geocoder:
         street_address = street_address.replace('JONES FALLS', 'I-83')
         street_address = street_address.replace('JONES FALLS EXPWY', 'I-83')
         street_address = street_address.replace('JONES FALLS EXPRESSWAY', 'I-83')
+        street_address = street_address.replace(' HW', ' HWY')
         street_address = re.sub(r'^(\d*) N\.? (.*)', r'\1 NORTH \2', street_address)
         street_address = re.sub(r'^(\d*) S\.? (.*)', r'\1 SOUTH \2', street_address)
         street_address = re.sub(r'^(\d*) E\.? (.*)', r'\1 EAST \2', street_address)
@@ -170,7 +171,7 @@ class Geocoder:
         Updates the locally cached geo lookup dictionary if geocode_result is a more accurate result
         :param geocode_result: geocode result from Geocod.io
         :param forward_lookup: The uncleaned street address
-        :param rev_lookup: The un-normalized latitude and longitude
+        :param rev_lookup: The latitude and longitude
         :return: None
         """
         assert geocode_result is not None
@@ -191,16 +192,18 @@ class Geocoder:
         # Update the actual coordinate lookup
         coords = None
         if geocode_result.get('latitude') and geocode_result.get('longitude'):
-            coords = (geocode_result['latitude'], geocode_result['longitude'])
+            coords = (round(geocode_result['latitude'], 4), round(geocode_result['longitude'], 4))
 
             if not self.cached_geo_rev.get(coords) or \
                     self.cached_geo_rev[coords].get('accuracy', 0.0) < result_accuracy:
                 self.cached_geo_rev[coords] = geocode_result
 
-        # Update the requested (unnormalized) coordinates
-        if rev_lookup and (not self.cached_geo_rev.get(rev_lookup) or
-                           self.cached_geo_rev[rev_lookup].get('accuracy', 0.0) < result_accuracy):
-            self.cached_geo_rev[rev_lookup] = geocode_result
+        # Update the requested coordinates
+        if rev_lookup:
+            rev_lookup = (round(rev_lookup[0], 4), round(rev_lookup[1], 4))
+            if (not self.cached_geo_rev.get(rev_lookup) or
+                    self.cached_geo_rev[rev_lookup].get('accuracy', 0.0) < result_accuracy):
+                self.cached_geo_rev[rev_lookup] = geocode_result
 
     @staticmethod
     def get_geocode_result(geocodio_loc: GeocodioLocation) -> GeocodeResult:

@@ -69,7 +69,7 @@ def test_geocode_bad_characters(geocoder_fixture):
 
 def test_reverse_geocode(geocoder_fixture):
     """Tests the public reverse geocode method"""
-    ret = geocoder_fixture.reverse_geocode(39.3051, -76.6158)
+    ret = geocoder_fixture.reverse_geocode(39.305145, -76.615899)
     _validate_geocode_result(geocoder_constants.geocode_rev_result_data, ret)
 
 
@@ -81,7 +81,7 @@ def test_get_geocode_result(geocoder_fixture):
 
 def test_reverse_geocode_internal(geocoder_fixture):
     """Tests the internal version of the reverse geocode method"""
-    ret = geocoder_fixture._reverse_geocode(39.3051, -76.6158)  # pylint:disable=protected-access
+    ret = geocoder_fixture._reverse_geocode(39.305145, -76.615899)  # pylint:disable=protected-access
 
     result_list = ret['results']
     assert isinstance(result_list, list)
