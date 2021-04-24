@@ -45,8 +45,9 @@ def error_check(func: TFunc) -> Callable:
             if error and (error.startswith('Please add a payment method.') or
                           error.startswith('Invalid API key') or
                           error.startswith('This is just a demo account')):
+                logger.warning("API key {} expired.", self.geocodio_api_list[self.geocodio_api_index])
                 self.geocodio_api_index += 1
-                raise RuntimeError('Geocodio api error')
+                raise APIRetryError('Geocodio api error')
 
             if resp.get('error'):
                 raise RuntimeError('Geocodio reported error: {}'.format(resp.get('error')))
